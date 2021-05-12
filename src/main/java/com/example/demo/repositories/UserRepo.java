@@ -8,6 +8,7 @@ import com.google.firebase.database.DatabaseReference;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Component;
 
+import javax.swing.text.Document;
 import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
@@ -48,6 +49,14 @@ public class UserRepo {
             e.printStackTrace();
         }
         return userList;
+    }
+
+    public User getUserById(String id) throws ExecutionException, InterruptedException {
+        DocumentReference docRef = db.collection("User").document(id);
+
+        ApiFuture<DocumentSnapshot> future = docRef.get();
+        DocumentSnapshot document = future.get();
+        return document.toObject(User.class);
     }
 
     public void addUser(User user){

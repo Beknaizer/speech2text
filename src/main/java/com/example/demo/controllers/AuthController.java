@@ -2,35 +2,24 @@ package com.example.demo.controllers;
 
 import com.example.demo.models.*;
 import com.example.demo.repositories.UserRepo;
-import com.google.api.core.ApiFuture;
-import com.google.cloud.firestore.*;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
-import org.springframework.web.bind.annotation.GetMapping;
-import org.springframework.web.bind.annotation.PostMapping;
-import org.springframework.web.bind.annotation.RequestParam;
+import org.springframework.web.bind.annotation.*;
 
-import java.util.ArrayList;
 import java.util.List;
 import java.util.concurrent.ExecutionException;
-import java.util.concurrent.ExecutorService;
-import java.util.concurrent.Executors;
-import java.util.concurrent.Future;
 
 @Controller
 public class AuthController {
-
-    ExecutorService threadExecutor = Executors.newCachedThreadPool();
-
 
     @Autowired
     private UserRepo userRepo;
 
 
-    @GetMapping("/login")
+    @GetMapping("/")
     public String loginPage(){
-        return "auth";
+        return "index";
     }
 
 //    @GetMapping("/registration")
@@ -40,35 +29,14 @@ public class AuthController {
 
     @PostMapping("/registration")
     public String registration(@RequestParam(name = "firstname") String firstname,
-                        @RequestParam(name = "lastname") String lastname,
-                        @RequestParam(name = "username") String username,
-                        @RequestParam(name = "password") String password,
-                        @RequestParam(name = "email") String email,
-                        @RequestParam(name = "phone") String phone,
+                                @RequestParam(name = "lastname") String lastname,
+                                @RequestParam(name = "username") String username,
+                                @RequestParam(name = "password") String password,
+                                @RequestParam(name = "email") String email,
+                                @RequestParam(name = "phone") String phone,
                                Model model) throws ExecutionException, InterruptedException {
 
         List<User> userList = userRepo.getUsers();
-        Future<Boolean> futureCall1 = threadExecutor.submit(new EmailChecker(email));
-        Future<Boolean> futureCall2 = threadExecutor.submit(new UsernamePasswordChecker(username,password));
-        boolean result1 =  futureCall1.get();
-        boolean result2 = futureCall2.get();
-        boolean isExist = false;
-        for (User user: userList){
-            if(user.getEmail().equals(email)) isExist = true;
-        }
-
-        if(isExist){
-            model.addAttribute("error","user already exist!");
-            return "auth";
-        }
-        if(!result1){
-            model.addAttribute("error","Invalid format of email!");
-            return "auth";
-        }
-        if(!result2){
-            model.addAttribute("error","Invalid format of username or password!");
-            return "auth";
-        }
 
         User currentUser = new User(username,password,firstname,lastname,email,phone, Role.USER);
         userRepo.addUser(currentUser);
@@ -77,19 +45,40 @@ public class AuthController {
 
     }
 
-    @PostMapping("/login")
-    public String login(@RequestParam(name = "username") String username,
-                        @RequestParam(name = "password") String password,
-                        Model model) throws ExecutionException, InterruptedException {
-        List<User> userList = userRepo.getUsers();
+//    @GetMapping("/firebaseConfig")
+//    @ResponseBody
+//    public JSONObject getConfig(){
+//        JSONObject jsonObject = null;
+//        JSONParser parser = new JSONParser();
+//        try {
+//            Object obj = parser.parse(new FileReader("C:\\Users\\Пользователь\\IdeaProjects\\speech2text_translator\\src\\main\\resources\\config.json"));
+//            jsonObject = (JSONObject) obj;
+//        } catch (FileNotFoundException e) {
+//            e.printStackTrace();
+//        } catch (IOException e) {
+//            e.printStackTrace();
+//        } catch (ParseException e) {
+//            e.printStackTrace();
+//        }
+//        return jsonObject;
+//    }
 
-        for(User user : userList){
-            if(user.getPassword().equals(password) && user.getUsername().equals(username)){
-                model.addAttribute("user",user);
-                return "mainPage";
-            }
-        }
-
-        return "auth";
+    @GetMapping("/homepage")
+    public String home(){
+        return "main_page";
     }
+
+
+    @PostMapping ("/login")
+    @ResponseBody
+    public User login(@RequestParam("id") String id,
+                        Model model) throws ExecutionException, InterruptedException {
+        User user = userRepo.getUserById(id);
+        model.addAttribute("user",user);
+        return user;
+    }
+
+
+
+
 }
